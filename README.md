@@ -5,6 +5,13 @@
 - [Introduction](#introduction)
 - [Starting Off Your AWS Cloud Project](#starting-off-your-aws-cloud-project)
 - [SET UP A VIRTUAL PRIVATE NETWORK (VPC)](#set-up-a-virtual-private-network-vpc)
+- [Creating the Subnets](#creating-the-subnets)
+- [Creating the Route Tables](#creating-the-route-tables)
+- [Creating an Elastic IP](#creating-an-elastic-ip)
+- [Creating the Security Groups](#creating-the-security-groups)
+- [Assigning Certificate and creating Hosted Zone](#assigning-certificate-and-creating-hosted-zone)
+- [Creating the Elastic File System (EFS)](#creating-the-elastic-file-system-efs)
+- [Creating the Relational Database Service (RDS), Key Management Service (KMS) and Subnet Groups](#creating-the-relational-database-service-rds-key-management-service-kms-and-subnet-groups)
 
 ## Introduction
 In this project, you will build a secure infrastructure inside AWS VPC (Virtual Private Cloud) network for a fictitious company (Choose an interesting name for it) that uses WordPress CMS for its main business website, and a Tooling Website (https://github.com/manny-uncharted/tooling) for their DevOps team. As part of the company’s desire for improved security and performance, a decision has been made to use a reverse proxy technology from NGINX to achieve this.
@@ -61,6 +68,8 @@ We would be using the architecture diagram above for this project.
 
     result:
     ![AWS VPC](img/aws-vpc-igw-attach.png)
+
+## Creating the Subnets
 - The next thing is to create the subnets. We would use [ipinfo](ipinfo.io/ips) to get the IP address ranges for the different regions. You can decide how you intend to assign the IP address ranges to the subnets. Here I would be using even-number addresses for public subnets and odd-number IP addresses for private subnets.
 We would use the IP address ranges for the different regions to create the subnets. We would create 6 subnets for the VPC. Two public subnets and four private subnets The subnets would be in the us-east-1 availability zone. As we would be using <b>us-east-1a</b> and <b>us-east-1b</b>.
 
@@ -83,6 +92,9 @@ We would use the IP address ranges for the different regions to create the subne
 
     Private subnet 4
     ![AWS private subnet 4](img/aws-vpc-private-subnet-4.png)
+
+
+## Creating the Route Tables
 
 - We then move on to creating the route tables. Here, we would be creating two route tables. A public and private route table.
 
@@ -111,6 +123,8 @@ We would use the IP address ranges for the different regions to create the subne
         result:
         ![AWS public route table](img/aws-vpc-public-route-table-route.png)
 
+
+## Creating an Elastic IP
     - Before we create the private route, we need to create an elastic ip address.
 
         result:
@@ -125,6 +139,9 @@ We would use the IP address ranges for the different regions to create the subne
 
         result:
         ![AWS private route table](img/aws-vpc-private-route-table-route.png)
+
+
+## Creating the Security Groups
 
 - Now we need to create security groups for all the application resources. It is important to allocate the security groups we create to the vpc created earlier.
     - Create a security group for our External Application Load Balancer (ALB). This would be a public security group. This is to allow the ALB to receive traffic from the internet. We would allow traffic on port 80 and 443. This is to allow traffic from the internet to the ALB.
@@ -157,4 +174,77 @@ We would use the IP address ranges for the different regions to create the subne
         result:
         ![AWS security group](img/aws-vpc-security-group-database.png)
 
+
+## Assigning Certificate and creating Hosted Zone
 - We need to create our certificates, before this you need to get a domain and transfer it to AWS Route 53. [Here's a guide on how to transfer your domain](https://www.youtube.com/watch?v=3lWo3ovMhTA)
+
+- Now create a hosted zone in route 53 bearing the name of your domain. Then create a record set for the domain. This is to allow the domain to resolve to the ALB.
+
+    result:
+    ![AWS hosted zone](img/aws-vpc-hosted-zone.png)
+
+- Navigate to the certificate manager and create a certificate for your domain. This is to allow the ALB to use the certificate for the domain.
+    - In creating the certificate, you would be asked to choose the domain name. Select the domain name you created earlier, ensure you use a wildcard domain name. This is to allow the certificate to be used for all subdomains. Then click on next.
+
+    result:
+    ![AWS certificate](img/aws-vpc-certificate.png)
+
+- Then click on the certificate, in the domain section you would be asked to create records in route 53. Click on create records in route 53. This is to allow the certificate to be validated.
+
+    result:
+    ![AWS certificate](img/aws-vpc-certificate-route53.png)
+
+## Creating the Elastic File System (EFS)
+
+- Now we proceed to create the Amazon Elastic File system (EFS). This is to allow the web servers to share files. Navigate to the EFS dashboard and click on create file system. Select the vpc that was earlier created and click on customize. Then click next. Here you would be asked to create mount targets. Select the subnets you want to create the mount targets in (private subnets 1&2). Remember to change the security group to datalayer security group. This is to allow the web servers to connect to the EFS. Then click next. Then click on create file system.
+
+    result:
+    ![AWS EFS](img/aws-vpc-efs.png)
+
+    ![AWS EFS Network](img/aws-vpc-efs-network.png)
+
+Note: According to our architecture diagram, our web servers are in private subnets 1 & 2. As they would be the ones that need to mount to the EFS.
+
+- In our filesystem, we need to create access points. One for our tooling and the other for wordpress server. Navigate to the EFS dashboard and select the file system you created earlier. Then click on access points. Click on create an access point. 
+
+    - specify the name of the access point.
+    - specify the path of the root directory. This is to allow the access point to be used for a specific directory.
+    - select the POSIX user:
+        - user ID : 0
+        - group ID : 0
+    - select the root directory creation permissions:
+        - owner ID : 0
+        - group ID : 0
+        - permissions: 0755
+
+    - Repeat the above steps to create another access point for the tooling server.
+    result:
+    ![AWS EFS](img/aws-vpc-efs-access-point-wordpress.png)
+Note: The purpose of creating two access points is to prevent the case of files overwriting each other when the WordPress server and the tooling server are both writing to the same access point.
+
+
+## Creating the Relational Database Service (RDS), Key Management Service (KMS) and Subnet Groups
+
+- Let's create the KMS key. Navigate to the KMS dashboard and click on create key. 
+    - select the key type as symmetric.
+    - select the key usage as encrypt and decrypt.
+    - click on next.
+    - select a name for the key.
+    - select the key administrator.(you can select your own account)
+    - click on next.
+    - select the key usage permission. (you can select your own account)
+    - click on finish.
+
+    result:
+    ![AWS KMS](img/aws-vpc-kms.png)
+
+- Let's move on with creating the subnet groups. Navigate to the RDS dashboard and click on subnet groups.
+    - click on create db subnet group.
+    - specify the name and description of the subnet group.
+    - select the vpc you created earlier.
+    - select the availability zones that include the subnets you want to add. In this case, we would select us-east-1a and us-east-1b.
+    - select the subnets you want to add. According to the format for assigning IP addresses our private subnets where the RDS would be created are odd-numbered. So we would be selecting the private subnets 3 & 4.
+    - click on create.
+
+    result:
+    ![AWS RDS](img/aws-vpc-rds-subnet-group.png)
