@@ -902,3 +902,11 @@ It's time for us to create the route53 records for the load balancers
 
 result:
 ![AWS EC2](img/aws-vpc-ec2-route53.png)
+
+
+- Now you can open your browser and go to
+    - tooling.yourdomain.com
+    - wordpress.yourdomain.com
+
+result:
+![AWS EC2](img/aws-vpc-ec2-domain.png)
