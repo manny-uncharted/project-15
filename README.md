@@ -142,15 +142,15 @@ We would use the IP address ranges for the different regions to create the subne
 
 
 ## Creating a NAT Gateway
-    - Then we need to create NAT gateways.
+- Then we need to create NAT gateways.
 
-        result:
-        ![AWS NAT gateway](img/aws-vpc-nat-gateway.png)
+    result:
+    ![AWS NAT gateway](img/aws-vpc-nat-gateway.png)
 
-    - Now let's navigate back to our route tables and select the private route table. Click on routes and edit routes. Add a new route with the destination as '0.0.0.0/0' and the target as the NAT gateway. This would bring up the NAT gateway dropdown. Select the NAT gateway you created earlier and click save.
+- Now let's navigate back to our route tables and select the private route table. Click on routes and edit routes. Add a new route with the destination as '0.0.0.0/0' and the target as the NAT gateway. This would bring up the NAT gateway dropdown. Select the NAT gateway you created earlier and click save.
 
-        result:
-        ![AWS private route table](img/aws-vpc-private-route-table-route.png)
+    result:
+    ![AWS private route table](img/aws-vpc-private-route-table-route.png)
 
 
 ## Creating the Security Groups
